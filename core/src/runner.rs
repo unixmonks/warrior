@@ -46,6 +46,50 @@ impl TaskCommand {
     pub fn new(program: impl Into<PathBuf>) -> Self {
         Self { program: program.into(), prefix: Vec::new() }
     }
+
+    /// A process for `task`, ready for its arguments.
+    pub(crate) fn process(&self) -> tokio::process::Command {
+        let mut cmd = tokio::process::Command::new(&self.program);
+        cmd.args(&self.prefix);
+        if !self.prefix.is_empty() {
+            // Through WSL, the program named after the prefix is `task`.
+            cmd.arg("task");
+        }
+        if let Some(appdir) = std::env::var_os("APPDIR").and_then(|d| d.into_string().ok()) {
+            for (key, value) in without_appdir(std::env::vars_os(), &appdir) {
+                match value {
+                    Some(v) => cmd.env(key, v),
+                    None => cmd.env_remove(key),
+                };
+            }
+        }
+        cmd
+    }
+}
+
+/// Inside an AppImage, variables such as LD_LIBRARY_PATH point into the
+/// image's own libraries, built for an older distribution. The user's `task`
+/// must load the system's, or it can fail to start. Returns the changes: each
+/// variable with the image's paths removed, or None to unset it.
+fn without_appdir(
+    vars: impl IntoIterator<Item = (OsString, OsString)>,
+    appdir: &str,
+) -> Vec<(OsString, Option<String>)> {
+    let appdir = appdir.trim_end_matches('/');
+    if appdir.is_empty() {
+        return Vec::new();
+    }
+    let inside = |p: &str| p == appdir || p.starts_with(&format!("{appdir}/"));
+    vars.into_iter()
+        .filter_map(|(key, value)| {
+            let value = value.into_string().ok()?;
+            if !value.split(':').any(inside) {
+                return None;
+            }
+            let kept: Vec<&str> = value.split(':').filter(|p| !p.is_empty() && !inside(p)).collect();
+            Some((key, (!kept.is_empty()).then(|| kept.join(":"))))
+        })
+        .collect()
 }
 
 #[derive(Debug, Clone)]
@@ -202,12 +246,7 @@ impl Session<'_> {
         S: Into<OsString>,
     {
         let command = cfg.command.as_ref().ok_or(Error::NotFound)?;
-        let mut cmd = tokio::process::Command::new(&command.program);
-        cmd.args(&command.prefix);
-        if !command.prefix.is_empty() {
-            // Through WSL, the program named after the prefix is `task`.
-            cmd.arg("task");
-        }
+        let mut cmd = command.process();
         cmd.args(FIXED_RC);
         cmd.arg(match verbosity {
             Verbosity::Quiet => VERBOSE_QUIET,
@@ -251,5 +290,33 @@ impl Session<'_> {
             stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strips_appimage_paths() {
+        let vars = [
+            ("LD_LIBRARY_PATH", "/tmp/.mount_warXYZ/usr/lib:/tmp/.mount_warXYZ/usr/lib/x86_64-linux-gnu"),
+            ("PATH", "/tmp/.mount_warXYZ/usr/bin:/usr/local/bin:/usr/bin"),
+            ("XDG_DATA_DIRS", "/tmp/.mount_warXYZ/usr/share::/usr/share"),
+            ("HOME", "/home/you"),
+            ("OTHER", "/tmp/.mount_warXYZother/lib"),
+        ]
+        .map(|(k, v)| (OsString::from(k), OsString::from(v)));
+        let mut changes = without_appdir(vars, "/tmp/.mount_warXYZ/");
+        changes.sort();
+        assert_eq!(
+            changes,
+            vec![
+                (OsString::from("LD_LIBRARY_PATH"), None),
+                (OsString::from("PATH"), Some("/usr/local/bin:/usr/bin".to_string())),
+                (OsString::from("XDG_DATA_DIRS"), Some("/usr/share".to_string())),
+            ]
+        );
+        assert!(without_appdir([(OsString::from("PATH"), OsString::from("/usr/bin"))], "").is_empty());
     }
 }

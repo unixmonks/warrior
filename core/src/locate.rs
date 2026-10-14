@@ -69,11 +69,7 @@ pub fn parse_version(text: &str) -> Option<Version> {
 /// Run `task --version`. Plain, with no overrides: older versions don't know
 /// some of the settings the runner passes.
 pub async fn task_version(cmd: &TaskCommand) -> Result<Version, String> {
-    let mut c = tokio::process::Command::new(&cmd.program);
-    c.args(&cmd.prefix);
-    if !cmd.prefix.is_empty() {
-        c.arg("task");
-    }
+    let mut c = cmd.process();
     c.arg("--version").stdin(std::process::Stdio::null()).kill_on_drop(true);
     #[cfg(windows)]
     c.creation_flags(0x0800_0000);
@@ -82,7 +78,15 @@ pub async fn task_version(cmd: &TaskCommand) -> Result<Version, String> {
         .map_err(|_| "task --version didn't answer".to_string())?
         .map_err(|e| format!("Couldn't run {}: {e}", cmd.program.display()))?;
     let text = String::from_utf8_lossy(&out.stdout);
-    parse_version(&text).ok_or_else(|| format!("Couldn't read the version from task --version: {}", text.trim()))
+    parse_version(&text).ok_or_else(|| {
+        // Usually task failed to start, and says why on stderr.
+        let said = match text.trim() {
+            "" => String::from_utf8_lossy(&out.stderr).trim().to_string(),
+            t => t.to_string(),
+        };
+        let said = if said.is_empty() { format!("no output, {}", out.status) } else { said };
+        format!("Couldn't read the version from {} --version: {said}", cmd.program.display())
+    })
 }
 
 #[cfg(test)]
