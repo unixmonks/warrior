@@ -1,0 +1,31 @@
+[package]
+name = "warrior"
+description = "A desktop app for Taskwarrior"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "warrior_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+warrior-core = { path = "../core" }
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "2"
+chrono = "0.4"
+notify = "8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["sync", "time", "macros"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Checks for the tray library before tauri's tray code, which panics without it.
+libloading = "0.7"

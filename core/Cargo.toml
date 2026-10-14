@@ -1,0 +1,17 @@
+[package]
+name = "warrior-core"
+description = "Runs the user's Taskwarrior 3 `task` program for the warrior app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+chrono = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["process", "time", "sync", "io-util", "rt", "macros"] }
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["process", "time", "sync", "io-util", "rt-multi-thread", "macros"] }

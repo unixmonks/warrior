@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "warrior",
+  "mainBinaryName": "warrior",
+  "version": "0.1.0",
+  "identifier": "com.unixmonks.warrior",
+  "build": {
+    "beforeDevCommand": "npm run ui",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build-ui",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "warrior",
+        "width": 1180,
+        "height": 780,
+        "minWidth": 360,
+        "minHeight": 480,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost",
+      "devCsp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "A desktop app for Taskwarrior",
+    "longDescription": "warrior is a graphical front end for Taskwarrior 3. Every read and change goes through your own task program and .taskrc. Not affiliated with the Taskwarrior project.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "deb": { "depends": ["taskwarrior"] }
+    }
+  }
+}

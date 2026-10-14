@@ -1,0 +1,15 @@
+/* Desktop-only tweaks on top of the shared web styles. Fonts are bundled, so
+   the app works offline. */
+:root {
+  --display: "Bricolage Grotesque Variable", "Bricolage Grotesque", system-ui, sans-serif;
+}
+
+/* A text-style button inside help text. */
+.link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.link-btn:hover { color: var(--accent-ink); }
+
+/* A small select that reads as part of a sentence. */
+.inline-select { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 6px; padding: 1px 4px; }
+.inline-select:disabled { opacity: .6; }
+
+.alert p { color: inherit; }
