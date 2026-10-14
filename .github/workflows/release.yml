@@ -1,0 +1,77 @@
+# Builds installers for Linux and macOS when a version tag is pushed, and
+# publishes them as a GitHub pre-release.
+#
+#   git tag v0.1.0-alpha.1 && git push origin v0.1.0-alpha.1
+#
+# The tag must match the version in Cargo.toml.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The oldest supported Ubuntu, so the AppImage and .deb run on older glibc too.
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          version=$(grep -m1 '^version = ' Cargo.toml | cut -d'"' -f2)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match version $version in Cargo.toml"
+            exit 1
+          fi
+
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ runner.os == 'macOS' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+
+      - run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "warrior ${{ github.ref_name }} (alpha)"
+          releaseBody: |
+            **This is alpha software.** It's early, it changes often, and it hasn't been tested on many setups yet. It only changes your tasks through your own `task` program, but back up `~/.task` before you try it, and please [report problems](https://github.com/unixmonks/warrior/issues).
+
+            You need [Taskwarrior](https://taskwarrior.org) 3.0 or later installed.
+
+            **Linux:** the `.AppImage` runs on most distributions (`chmod +x` it first). There's also a `.deb` for Debian and Ubuntu and an `.rpm` for Fedora.
+
+            **macOS:** the `.dmg` runs on Apple silicon and Intel Macs. The app isn't signed yet, so macOS will say it's damaged or from an unidentified developer. After copying it to Applications, run `xattr -dr com.apple.quarantine /Applications/warrior.app` once.
+          releaseDraft: false
+          prerelease: true
+          args: ${{ matrix.args }}

@@ -7,6 +7,7 @@ export function Brand() {
     <a href="/" className="brand" onClick={(e) => { e.preventDefault(); navigate("/"); }}>
       <span className="brand-mark" aria-hidden="true">w&gt;</span>
       <span>warrior</span>
+      <span className="brand-tag" title="Alpha software: back up your tasks">alpha</span>
     </a>
   );
 }

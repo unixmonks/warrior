@@ -469,6 +469,10 @@ function AboutCard() {
         A desktop app for <a href="https://taskwarrior.org" target="_blank" rel="noopener">Taskwarrior</a>.
         Not affiliated with the Taskwarrior project.
       </p>
+      <p>
+        This is alpha software: early, changing often, and not yet tested on many setups. Back up your
+        .taskrc and task data, and please <a href="https://github.com/unixmonks/warrior/issues" target="_blank" rel="noopener">report problems</a>.
+      </p>
     </section>
   );
 }

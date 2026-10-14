@@ -4450,7 +4450,7 @@ dependencies = [
 
 [[package]]
 name = "warrior"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "chrono",
  "libloading",
@@ -4470,7 +4470,7 @@ dependencies = [
 
 [[package]]
 name = "warrior-core"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "chrono",
  "serde",

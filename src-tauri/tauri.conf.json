@@ -2,7 +2,6 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "warrior",
   "mainBinaryName": "warrior",
-  "version": "0.1.0",
   "identifier": "com.unixmonks.warrior",
   "build": {
     "beforeDevCommand": "npm run ui",

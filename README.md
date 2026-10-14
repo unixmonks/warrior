@@ -6,6 +6,11 @@ recurrence, contexts, UDAs, reports and hooks behave exactly as they do in your 
 
 Not affiliated with the Taskwarrior project.
 
+> [!WARNING]
+> **warrior is alpha software.** It's early, it changes often, and it hasn't been tested on many
+> setups yet. It only changes your tasks through your own `task` program, but back up `~/.task`
+> before you try it, and please [report problems](https://github.com/unixmonks/warrior/issues).
+
 Sponsored by:
 
 - **[Margin](https://marginpaper.com)**: hyperlinked PDF planners, journals and templates for
@@ -48,16 +53,27 @@ Sponsored by:
 
 ![The command panel showing the output of task projects](docs/images/command.png)
 
+## Installing
+
+Download the latest build from
+[Releases](https://github.com/unixmonks/warrior/releases). All of them are alpha pre-releases.
+
+- **Linux:** the `.AppImage` runs on most distributions (`chmod +x` it first). There's also a
+  `.deb` for Debian and Ubuntu and an `.rpm` for Fedora.
+- **macOS:** the `.dmg` runs on Apple silicon and Intel Macs. The app isn't signed yet, so macOS
+  will say it's damaged or from an unidentified developer. After copying it to Applications, run
+  `xattr -dr com.apple.quarantine /Applications/warrior.app` once.
+
 ## Requirements
 
 - **Taskwarrior 3.0 or later.** warrior explains how to install it if it can't find `task`, and
   offers to create an empty `.taskrc` if you don't have one.
 - **Linux or macOS.** On Windows, Taskwarrior runs inside WSL, and warrior can run `task` there
-  (Settings → Your task setup). This hasn't had much testing yet.
+  (Settings → Your task setup), but there's no Windows build yet and it's untested.
 
 ## Building
 
-There are no release builds yet, so build it yourself. You need Rust (1.82 or later), Node 20 or
+You need Rust (1.82 or later), Node 20 or
 later, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform. On
 Linux that's WebKitGTK 4.1, for example:
 
@@ -68,7 +84,7 @@ sudo xbps-install libwebkit2gtk41-devel gtk+3-devel libsoup3-devel librsvg-devel
 ```
 
 The tray icon needs libayatana-appindicator (or libappindicator). Without it, warrior runs without
-a tray icon.
+a tray icon, but `npm run build` can't make Linux installers.
 
 Then:
 
@@ -116,6 +132,20 @@ cargo fmt --check
 
 The integration tests in `core/tests/task.rs` need Taskwarrior 3 installed. They use temporary
 data and config directories and never touch your tasks.
+
+## Releasing
+
+Versions follow [semver](https://semver.org), and everything before 1.0 is alpha:
+`0.1.0-alpha.1`, `0.1.0-alpha.2`, and so on. To release, set the version in `Cargo.toml` and
+`package.json`, commit, then push a matching tag:
+
+```sh
+git tag v0.1.0-alpha.2
+git push origin v0.1.0-alpha.2
+```
+
+[.github/workflows/release.yml](.github/workflows/release.yml) builds the Linux and macOS installers
+and publishes them as a GitHub pre-release.
 
 ## License
 
